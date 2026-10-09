@@ -1,0 +1,4 @@
+# 本仓库只跟踪 PyTorch 学习目录和这份忽略规则。
+/*
+!/.gitignore
+!/pytorch_learning/
