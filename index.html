@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鼠标互动网页</title>
+  <style>
+    :root {
+      --x: 50%;
+      --y: 50%;
+      --tilt-x: 0deg;
+      --tilt-y: 0deg;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      color: #f8fbff;
+      font-family: "Microsoft YaHei", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at var(--x) var(--y), rgba(120, 255, 214, 0.38), transparent 260px),
+        radial-gradient(circle at calc(100% - var(--x)) calc(100% - var(--y)), rgba(255, 101, 132, 0.25), transparent 300px),
+        linear-gradient(135deg, #08111f, #172038 52%, #24163a);
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at var(--x) var(--y), #000 0, transparent 66%);
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      perspective: 900px;
+    }
+
+    .card {
+      width: min(720px, 92vw);
+      padding: clamp(28px, 6vw, 56px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(10, 16, 30, 0.56);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(18px);
+      transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+      transition: transform 80ms ease-out;
+    }
+
+    .tag {
+      margin: 0 0 14px;
+      color: #78ffd6;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(48px, 10vw, 116px);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    p {
+      max-width: 52ch;
+      margin: 24px 0 0;
+      color: rgba(248, 251, 255, 0.72);
+      font-size: clamp(16px, 2vw, 19px);
+      line-height: 1.75;
+    }
+
+    .cursor {
+      position: fixed;
+      z-index: 2;
+      left: var(--x);
+      top: var(--y);
+      width: 30px;
+      height: 30px;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 28px rgba(120, 255, 214, 0.85);
+      mix-blend-mode: screen;
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .stat {
+      min-width: 112px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 8px;
+      color: rgba(248, 251, 255, 0.62);
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        overflow: auto;
+      }
+
+      .cursor {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <main>
+    <section class="card">
+      <p class="tag">移动鼠标试试看</p>
+      <h1>光会追着你</h1>
+      <p>这个页面会根据鼠标位置实时改变背景光源、粒子连线、卡片倾斜角度和坐标数据。移动得越快，画面越活跃。</p>
+      <div class="stats">
+        <div class="stat">
+          <strong id="xText">50%</strong>
+          <span>横向</span>
+        </div>
+        <div class="stat">
+          <strong id="yText">50%</strong>
+          <span>纵向</span>
+        </div>
+        <div class="stat">
+          <strong id="speedText">0</strong>
+          <span>速度</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="cursor"></div>
+
+  <script>
+    const root = document.documentElement;
+    const canvas = document.querySelector("#particles");
+    const ctx = canvas.getContext("2d");
+    const xText = document.querySelector("#xText");
+    const yText = document.querySelector("#yText");
+    const speedText = document.querySelector("#speedText");
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let particles = [];
+
+    const mouse = {
+      x: width / 2,
+      y: height / 2,
+      lastX: width / 2,
+      lastY: height / 2,
+      speed: 0
+    };
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const total = Math.min(140, Math.max(70, Math.floor(width * height / 12000)));
+      particles = Array.from({ length: total }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        r: Math.random() * 2 + 1,
+        color: Math.random() > 0.5 ? "120, 255, 214" : "255, 101, 132"
+      }));
+    }
+
+    function setMouse(x, y) {
+      mouse.speed = Math.hypot(x - mouse.lastX, y - mouse.lastY);
+      mouse.lastX = mouse.x;
+      mouse.lastY = mouse.y;
+      mouse.x = x;
+      mouse.y = y;
+
+      const px = Math.round((x / width) * 100);
+      const py = Math.round((y / height) * 100);
+      root.style.setProperty("--x", px + "%");
+      root.style.setProperty("--y", py + "%");
+      root.style.setProperty("--tilt-y", ((x / width - 0.5) * 14) + "deg");
+      root.style.setProperty("--tilt-x", ((0.5 - y / height) * 12) + "deg");
+      xText.textContent = px + "%";
+      yText.textContent = py + "%";
+      speedText.textContent = Math.round(mouse.speed);
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = "lighter";
+
+      particles.forEach((particle) => {
+        const dx = mouse.x - particle.x;
+        const dy = mouse.y - particle.y;
+        const distance = Math.max(Math.hypot(dx, dy), 1);
+        const force = Math.min(5 / distance, 0.06);
+
+        particle.vx += dx * force * 0.014;
+        particle.vy += dy * force * 0.014;
+        particle.vx *= 0.985;
+        particle.vy *= 0.985;
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+
+        if (particle.x < -20) particle.x = width + 20;
+        if (particle.x > width + 20) particle.x = -20;
+        if (particle.y < -20) particle.y = height + 20;
+        if (particle.y > height + 20) particle.y = -20;
+
+        const alpha = Math.max(0.18, 1 - distance / 520);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${particle.color}, ${alpha})`;
+        ctx.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (distance < 175) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 * (1 - distance / 175)})`;
+          ctx.moveTo(particle.x, particle.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.stroke();
+        }
+      });
+
+      mouse.speed *= 0.88;
+      speedText.textContent = Math.round(mouse.speed);
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("pointermove", (event) => {
+      setMouse(event.clientX, event.clientY);
+    });
+
+    resize();
+    setMouse(mouse.x, mouse.y);
+    animate();
+  </script>
+</body>
+</html>
