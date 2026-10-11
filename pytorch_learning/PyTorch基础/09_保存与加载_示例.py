@@ -20,7 +20,7 @@ for step in range(300):
 # 权重文件始终放在本脚本旁的输出目录，方便查找。
 output_directory = Path(__file__).resolve().parent / "outputs"
 output_directory.mkdir(exist_ok=True)
-weight_path = output_directory / "09_linear_weights.pt"
+weight_path = output_directory / "09_保存与加载_权重.pt"
 torch.save(model.state_dict(), weight_path)
 print("参数已保存到：", weight_path)
 print("保存的参数名称：", list(model.state_dict().keys()))

@@ -3,7 +3,7 @@
 这不是完整 STTran：没有图片、检测器、空间或时间 Transformer。
 三组关系的输出数量与官方 Action Genome 基线相同：3、6、17。
 默认演示 sigmoid + MultiLabelMarginLoss；--loss bce 演示 sigmoid + BCELoss。
-运行示例：python 04_关系训练练习.py --loss margin
+运行示例：python 04_标签损失与训练_示例.py --loss margin
 """
 
 import argparse
@@ -167,7 +167,7 @@ def 训练小模型(损失选择):
     # 输出仅保存到学习文件夹内，便于重跑和检查。
     保存目录 = Path(__file__).resolve().parent / "outputs"
     保存目录.mkdir(exist_ok=True)
-    保存路径 = 保存目录 / f"教学关系分类器_{损失选择}.pt"
+    保存路径 = 保存目录 / f"04_标签损失与训练_权重_{损失选择}.pt"
     torch.save({"state_dict": 模型.state_dict()}, 保存路径)
     新模型 = 小关系分类器()
     检查点 = torch.load(保存路径, map_location="cpu", weights_only=True)
