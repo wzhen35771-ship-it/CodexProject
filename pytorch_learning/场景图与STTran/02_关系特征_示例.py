@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 
 
-def 创建联合框(boxes, pair_idx, im_idx):
+def create_union_boxes(boxes, pair_idx, im_idx):
     """boxes 每行：[帧号, x1, y1, x2, y2]；输出也是这个顺序。"""
     subject_boxes = boxes[pair_idx[:, 0]]
     object_boxes = boxes[pair_idx[:, 1]]
@@ -21,7 +21,7 @@ def 创建联合框(boxes, pair_idx, im_idx):
     return torch.cat((im_idx.float().unsqueeze(1), left_top, right_bottom), dim=1)
 
 
-def 创建教学空间布局(boxes, pair_idx, union_boxes, size=4):
+def create_teaching_spatial_layouts(boxes, pair_idx, union_boxes, size=4):
     """教学版：把联合框划成 size×size 小格，以格子中心是否在框内填 0/1。
 
     官方 draw_union_boxes 会保留边缘的部分覆盖值；本函数采用较易手算的
@@ -43,7 +43,7 @@ def 创建教学空间布局(boxes, pair_idx, union_boxes, size=4):
     return layouts
 
 
-def 演示双线性插值():
+def demonstrate_bilinear_interpolation():
     # 四个格点：左上 1，右上 2，左下 3，右下 4。
     feature_map = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
     x, y = 0.25, 0.5
@@ -57,7 +57,7 @@ def 演示双线性插值():
     assert torch.isclose(value, torch.tensor(2.25))
 
 
-def 演示冻结与训练():
+def demonstrate_frozen_extractor_training():
     torch.manual_seed(7)
     extractor = nn.Linear(4, 4)
     relation_head = nn.Linear(4, 1)
@@ -109,10 +109,10 @@ def main():
     assert torch.equal(subject_features[0], subject_features[1])
     assert torch.equal(subject_features[2], features[3])
 
-    union_boxes = 创建联合框(boxes, pair_idx, im_idx)
+    union_boxes = create_union_boxes(boxes, pair_idx, im_idx)
     print("联合框：\n", union_boxes)
     assert torch.equal(union_boxes[0], torch.tensor([0, 10, 10, 60, 70]))
-    spatial_layouts = 创建教学空间布局(boxes, pair_idx, union_boxes)
+    spatial_layouts = create_teaching_spatial_layouts(boxes, pair_idx, union_boxes)
     print("两通道空间布局形状：", list(spatial_layouts.shape))
     print("第一对的主体布局：\n", spatial_layouts[0, 0])
     print("第一对的客体布局：\n", spatial_layouts[0, 1])
@@ -193,8 +193,8 @@ def main():
     a, b = torch.tensor([[1.0, 2.0]]), torch.tensor([[10.0, 20.0]])
     print("拼接 [1,2] 和 [10,20]：", torch.cat((a, b), dim=1).tolist())
     print("相加 [1,2] 和 [10,20]：", (a + b).tolist())
-    演示双线性插值()
-    演示冻结与训练()
+    demonstrate_bilinear_interpolation()
+    demonstrate_frozen_extractor_training()
     print("检查全部通过。下一章将学习这些关系向量怎样交换同帧与跨帧信息。")
 
 

@@ -10,214 +10,242 @@ import torch
 from torch import nn
 
 
-class 空间层(nn.Module):
+class SpatialLayer(nn.Module):
     """按照官方空间层的顺序：两次残差相加，两次 LayerNorm。"""
 
-    def __init__(self, 特征维数=8, 头数=2, 中间维数=12):
+    def __init__(self, feature_dim=8, num_heads=2, hidden_dim=12):
         super().__init__()
-        self.注意力 = nn.MultiheadAttention(特征维数, 头数, dropout=0.0)
-        self.线性1 = nn.Linear(特征维数, 中间维数)
-        self.线性2 = nn.Linear(中间维数, 特征维数)
-        self.归一化1 = nn.LayerNorm(特征维数)
-        self.归一化2 = nn.LayerNorm(特征维数)
+        self.attention = nn.MultiheadAttention(feature_dim, num_heads, dropout=0.0)
+        self.linear_1 = nn.Linear(feature_dim, hidden_dim)
+        self.linear_2 = nn.Linear(hidden_dim, feature_dim)
+        self.layer_norm_1 = nn.LayerNorm(feature_dim)
+        self.layer_norm_2 = nn.LayerNorm(feature_dim)
 
-    def forward(self, 输入, 补齐掩码):
-        新信息, 权重 = self.注意力(
-            输入, 输入, 输入,
-            key_padding_mask=补齐掩码,
+    def forward(self, inputs, padding_mask):
+        attention_output, attention_weights = self.attention(
+            inputs, inputs, inputs,
+            key_padding_mask=padding_mask,
             need_weights=True,
         )
-        中间结果 = self.归一化1(输入 + 新信息)
-        前馈结果 = self.线性2(torch.relu(self.线性1(中间结果)))
-        输出 = self.归一化2(中间结果 + 前馈结果)
-        return 输出, 权重
+        hidden_states = self.layer_norm_1(inputs + attention_output)
+        feedforward_output = self.linear_2(torch.relu(self.linear_1(hidden_states)))
+        outputs = self.layer_norm_2(hidden_states + feedforward_output)
+        return outputs, attention_weights
 
 
-class 时间层(nn.Module):
+class TemporalLayer(nn.Module):
     """对应官方时间层的顺序：第二次残差相加后没有第二个 LayerNorm。"""
 
-    def __init__(self, 特征维数=8, 头数=2, 中间维数=12):
+    def __init__(self, feature_dim=8, num_heads=2, hidden_dim=12):
         super().__init__()
-        self.注意力 = nn.MultiheadAttention(特征维数, 头数, dropout=0.0)
-        self.线性1 = nn.Linear(特征维数, 中间维数)
-        self.线性2 = nn.Linear(中间维数, 特征维数)
-        self.归一化 = nn.LayerNorm(特征维数)
+        self.attention = nn.MultiheadAttention(feature_dim, num_heads, dropout=0.0)
+        self.linear_1 = nn.Linear(feature_dim, hidden_dim)
+        self.linear_2 = nn.Linear(hidden_dim, feature_dim)
+        self.layer_norm = nn.LayerNorm(feature_dim)
 
-    def forward(self, 输入, 补齐掩码, 位置向量):
-        新信息, 权重 = self.注意力(
-            query=输入 + 位置向量,
-            key=输入 + 位置向量,
-            value=输入,
-            key_padding_mask=补齐掩码,
+    def forward(self, inputs, padding_mask, position_vectors):
+        attention_output, attention_weights = self.attention(
+            query=inputs + position_vectors,
+            key=inputs + position_vectors,
+            value=inputs,
+            key_padding_mask=padding_mask,
             need_weights=True,
         )
-        中间结果 = self.归一化(输入 + 新信息)
-        前馈结果 = self.线性2(torch.relu(self.线性1(中间结果)))
-        输出 = 中间结果 + 前馈结果
-        return 输出, 权重
+        hidden_states = self.layer_norm(inputs + attention_output)
+        feedforward_output = self.linear_2(torch.relu(self.linear_1(hidden_states)))
+        outputs = hidden_states + feedforward_output
+        return outputs, attention_weights
 
 
-def 打包同帧关系(特征, 帧编号):
+def pack_frame_relations(relation_features, frame_indices):
     """从 [R,D] 打包成 [L,T,D]，每一列是一帧。"""
-    帧数 = int(帧编号.max().item()) + 1
-    每帧数量 = torch.bincount(帧编号, minlength=帧数)
-    最大数量 = int(每帧数量.max().item())
-    空间输入 = 特征.new_zeros((最大数量, 帧数, 特征.shape[1]))
-    补齐掩码 = torch.ones((帧数, 最大数量), dtype=torch.bool)
-    原始行号 = torch.full((最大数量, 帧数), -1, dtype=torch.long)
+    num_frames = int(frame_indices.max().item()) + 1
+    relations_per_frame = torch.bincount(frame_indices, minlength=num_frames)
+    max_relations = int(relations_per_frame.max().item())
+    spatial_inputs = relation_features.new_zeros(
+        (max_relations, num_frames, relation_features.shape[1])
+    )
+    padding_mask = torch.ones((num_frames, max_relations), dtype=torch.bool)
+    original_row_indices = torch.full((max_relations, num_frames), -1, dtype=torch.long)
 
-    for 帧 in range(帧数):
-        行号 = torch.where(帧编号 == 帧)[0]
-        数量 = 行号.numel()
-        空间输入[:数量, 帧] = 特征[行号]
-        补齐掩码[帧, :数量] = False
-        原始行号[:数量, 帧] = 行号
-    return 空间输入, 补齐掩码, 原始行号
+    for frame_index in range(num_frames):
+        row_indices = torch.where(frame_indices == frame_index)[0]
+        num_relations = row_indices.numel()
+        spatial_inputs[:num_relations, frame_index] = relation_features[row_indices]
+        padding_mask[frame_index, :num_relations] = False
+        original_row_indices[:num_relations, frame_index] = row_indices
+    return spatial_inputs, padding_mask, original_row_indices
 
 
-def 还原同帧关系(空间输出, 原始行号, 总关系数):
+def restore_frame_relations(spatial_outputs, original_row_indices, total_relations):
     """按行号放回 [R,D]，无需依赖展平以后恰好是正确的顺序。"""
-    还原结果 = 空间输出.new_zeros((总关系数, 空间输出.shape[-1]))
-    for 帧 in range(空间输出.shape[1]):
-        有效 = 原始行号[:, 帧] >= 0
-        还原结果[原始行号[有效, 帧]] = 空间输出[有效, 帧]
-    return 还原结果
+    restored_relations = spatial_outputs.new_zeros((total_relations, spatial_outputs.shape[-1]))
+    for frame_index in range(spatial_outputs.shape[1]):
+        valid_mask = original_row_indices[:, frame_index] >= 0
+        restored_relations[original_row_indices[valid_mask, frame_index]] = (
+            spatial_outputs[valid_mask, frame_index]
+        )
+    return restored_relations
 
 
-def 打包相邻窗口(特征, 帧编号, 位置表):
+def pack_adjacent_windows(relation_features, frame_indices, position_table):
     """窗口大小 2、步长 1；窗口内首先放较早帧，再放较晚帧。"""
-    帧数 = int(帧编号.max().item()) + 1
-    assert 帧数 >= 2, "本练习要求至少两帧。"
-    最大数量 = int(torch.bincount(帧编号).max().item())
-    容量 = 2 * 最大数量
-    窗口数 = 帧数 - 1
-    时间输入 = 特征.new_zeros((容量, 窗口数, 特征.shape[-1]))
-    位置向量 = torch.zeros_like(时间输入)
-    补齐掩码 = torch.ones((窗口数, 容量), dtype=torch.bool)
-    原始行号 = torch.full((容量, 窗口数), -1, dtype=torch.long)
-    绝对帧编号 = torch.full((容量, 窗口数), -1, dtype=torch.long)
+    num_frames = int(frame_indices.max().item()) + 1
+    assert num_frames >= 2, "本练习要求至少两帧。"
+    max_relations = int(torch.bincount(frame_indices).max().item())
+    capacity = 2 * max_relations
+    num_windows = num_frames - 1
+    temporal_inputs = relation_features.new_zeros(
+        (capacity, num_windows, relation_features.shape[-1])
+    )
+    position_vectors = torch.zeros_like(temporal_inputs)
+    padding_mask = torch.ones((num_windows, capacity), dtype=torch.bool)
+    original_row_indices = torch.full((capacity, num_windows), -1, dtype=torch.long)
+    absolute_frame_indices = torch.full((capacity, num_windows), -1, dtype=torch.long)
 
-    for 窗口 in range(窗口数):
-        较早行号 = torch.where(帧编号 == 窗口)[0]
-        较晚行号 = torch.where(帧编号 == 窗口 + 1)[0]
-        行号 = torch.cat((较早行号, 较晚行号))
-        数量 = 行号.numel()
-        较早数量 = 较早行号.numel()
-        时间输入[:数量, 窗口] = 特征[行号]
-        位置向量[:较早数量, 窗口] = 位置表[0]
-        位置向量[较早数量:数量, 窗口] = 位置表[1]
-        补齐掩码[窗口, :数量] = False
-        原始行号[:数量, 窗口] = 行号
-        绝对帧编号[:数量, 窗口] = 帧编号[行号]
-    return 时间输入, 位置向量, 补齐掩码, 原始行号, 绝对帧编号
+    for window_index in range(num_windows):
+        earlier_row_indices = torch.where(frame_indices == window_index)[0]
+        later_row_indices = torch.where(frame_indices == window_index + 1)[0]
+        row_indices = torch.cat((earlier_row_indices, later_row_indices))
+        num_relations = row_indices.numel()
+        num_earlier_relations = earlier_row_indices.numel()
+        temporal_inputs[:num_relations, window_index] = relation_features[row_indices]
+        position_vectors[:num_earlier_relations, window_index] = position_table[0]
+        position_vectors[num_earlier_relations:num_relations, window_index] = position_table[1]
+        padding_mask[window_index, :num_relations] = False
+        original_row_indices[:num_relations, window_index] = row_indices
+        absolute_frame_indices[:num_relations, window_index] = frame_indices[row_indices]
+    return (
+        temporal_inputs, position_vectors, padding_mask,
+        original_row_indices, absolute_frame_indices,
+    )
 
 
-def 还原较晚帧模式(时间输出, 原始行号, 绝对帧编号, 总关系数):
+def restore_latter_frame_relations(
+    temporal_outputs, original_row_indices, absolute_frame_indices, total_relations,
+):
     """latter：第 0 帧由第一个窗口保留，其余帧取前一个窗口的结果。"""
-    还原结果 = 时间输出.new_zeros((总关系数, 时间输出.shape[-1]))
-    被写次数 = torch.zeros(总关系数, dtype=torch.long)
-    for 窗口 in range(时间输出.shape[1]):
-        保留位置 = 绝对帧编号[:, 窗口] == 窗口 + 1
-        if 窗口 == 0:
-            保留位置 = 保留位置 | (绝对帧编号[:, 窗口] == 0)
-        行号 = 原始行号[保留位置, 窗口]
-        还原结果[行号] = 时间输出[保留位置, 窗口]
-        被写次数[行号] += 1
-    assert torch.equal(被写次数, torch.ones_like(被写次数))
-    return 还原结果
+    restored_relations = temporal_outputs.new_zeros((total_relations, temporal_outputs.shape[-1]))
+    write_counts = torch.zeros(total_relations, dtype=torch.long)
+    for window_index in range(temporal_outputs.shape[1]):
+        keep_mask = absolute_frame_indices[:, window_index] == window_index + 1
+        if window_index == 0:
+            keep_mask = keep_mask | (absolute_frame_indices[:, window_index] == 0)
+        row_indices = original_row_indices[keep_mask, window_index]
+        restored_relations[row_indices] = temporal_outputs[keep_mask, window_index]
+        write_counts[row_indices] += 1
+    assert torch.equal(write_counts, torch.ones_like(write_counts))
+    return restored_relations
 
 
-def 注意力手算核对():
-    查询 = torch.tensor([[1.0, 0.0]])
-    键 = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
-    值 = torch.tensor([[10.0, 0.0], [0.0, 20.0]])
-    分数 = 查询 @ 键.T / math.sqrt(2)
-    权重 = torch.softmax(分数, dim=-1)
-    加权结果 = 权重 @ 值
-    print("手算分数：", 分数)
-    print("手算权重：", 权重)
-    print("手算加权结果：", 加权结果)
-    assert torch.allclose(权重.sum(dim=-1), torch.ones(1))
-    assert torch.allclose(加权结果, torch.tensor([[6.6976, 6.6048]]), atol=1e-4)
+def verify_manual_attention():
+    queries = torch.tensor([[1.0, 0.0]])
+    keys = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
+    values = torch.tensor([[10.0, 0.0], [0.0, 20.0]])
+    scores = queries @ keys.T / math.sqrt(2)
+    attention_weights = torch.softmax(scores, dim=-1)
+    weighted_result = attention_weights @ values
+    print("手算分数：", scores)
+    print("手算权重：", attention_weights)
+    print("手算加权结果：", weighted_result)
+    assert torch.allclose(attention_weights.sum(dim=-1), torch.ones(1))
+    assert torch.allclose(weighted_result, torch.tensor([[6.6976, 6.6048]]), atol=1e-4)
 
 
-def 归一化手算核对():
-    输入 = torch.tensor([[1.0, 3.0]])
-    均值 = 输入.mean(dim=-1, keepdim=True)
-    方差 = 输入.var(dim=-1, correction=0, keepdim=True)
-    手算 = (输入 - 均值) / torch.sqrt(方差 + 1e-5)
-    模块 = nn.LayerNorm(2)
-    print("归一化均值：", 均值, "总体方差：", 方差)
-    print("归一化结果：", 模块(输入))
-    assert torch.allclose(手算, 模块(输入))
+def verify_manual_layer_norm():
+    inputs = torch.tensor([[1.0, 3.0]])
+    feature_mean = inputs.mean(dim=-1, keepdim=True)
+    variance = inputs.var(dim=-1, correction=0, keepdim=True)
+    manual_result = (inputs - feature_mean) / torch.sqrt(variance + 1e-5)
+    layer_norm_module = nn.LayerNorm(2)
+    print("归一化均值：", feature_mean, "总体方差：", variance)
+    print("归一化结果：", layer_norm_module(inputs))
+    assert torch.allclose(manual_result, layer_norm_module(inputs))
 
 
 def main():
     torch.manual_seed(7)
     torch.set_printoptions(precision=4, sci_mode=False)
-    注意力手算核对()
-    归一化手算核对()
+    verify_manual_attention()
+    verify_manual_layer_norm()
 
     # 行号 0、1 属于第 0 帧；行号 2 属于第 1 帧；行号 3、4 属于第 2 帧。
     # 数字是人工特征，用来追踪维度；每一列没有指定为“颜色”或“拿着”。
-    特征 = (torch.arange(40, dtype=torch.float32).reshape(5, 8) / 10).requires_grad_()
-    帧编号 = torch.tensor([0, 0, 1, 2, 2])
-    空间输入, 空间掩码, 空间行号 = 打包同帧关系(特征, 帧编号)
-    print("\n原始关系特征形状：", tuple(特征.shape))
-    print("空间输入形状 [L,T,D]：", tuple(空间输入.shape))
-    print("空间行号，每一列是一帧：\n", 空间行号)
-    print("空间掩码，每一行是一帧，True 表示补齐：\n", 空间掩码)
-    assert torch.equal(空间行号, torch.tensor([[0, 2, 3], [1, -1, 4]]))
-    assert torch.equal(还原同帧关系(空间输入, 空间行号, 5), 特征)
-
-    空间模型 = 空间层()
-    空间输出, 空间权重 = 空间模型(空间输入, 空间掩码)
-    同帧结果 = 还原同帧关系(空间输出, 空间行号, 5)
-    print("空间权重形状 [T,L,L]：", tuple(空间权重.shape))
-    print("第 1 帧空间注意力权重：\n", 空间权重[1])
-    assert tuple(同帧结果.shape) == (5, 8)
-    # 第 1 帧只有一个有效 key，第二列权重必须是 0。
-    assert torch.equal(空间权重[1, :, 1], torch.zeros(2))
-
-    位置嵌入 = nn.Embedding(2, 8)
-    nn.init.uniform_(位置嵌入.weight)
-    时间输入, 位置向量, 时间掩码, 时间行号, 时间帧号 = 打包相邻窗口(
-        同帧结果, 帧编号, 位置嵌入.weight,
+    relation_features = (torch.arange(40, dtype=torch.float32).reshape(5, 8) / 10).requires_grad_()
+    frame_indices = torch.tensor([0, 0, 1, 2, 2])
+    spatial_inputs, spatial_mask, spatial_row_indices = pack_frame_relations(
+        relation_features, frame_indices,
     )
-    print("\n时间输入形状 [2L,T-1,D]：", tuple(时间输入.shape))
-    print("时间行号，每一列是一个相邻帧窗口：\n", 时间行号)
-    print("时间帧号：\n", 时间帧号)
-    print("时间掩码，每一行是一个窗口：\n", 时间掩码)
-    print("较早位置向量：", 位置嵌入.weight[0])
-    print("较晚位置向量：", 位置嵌入.weight[1])
-    assert torch.equal(时间行号, torch.tensor([[0, 2], [1, 3], [2, 4], [-1, -1]]))
-    assert torch.equal(时间帧号, torch.tensor([[0, 1], [0, 2], [1, 2], [-1, -1]]))
-    assert torch.equal(时间掩码, torch.tensor([[False, False, False, True]] * 2))
-    assert torch.equal(位置向量[2, 0], 位置嵌入.weight[1])  # 关系行 2 在第一个窗口较晚。
-    assert torch.equal(位置向量[0, 1], 位置嵌入.weight[0])  # 同一关系行 2 在第二个窗口较早。
-    # 用时间输入本身核对打包和还原，不受模型随机参数影响。
-    assert torch.equal(还原较晚帧模式(时间输入, 时间行号, 时间帧号, 5), 同帧结果)
+    print("\n原始关系特征形状：", tuple(relation_features.shape))
+    print("空间输入形状 [L,T,D]：", tuple(spatial_inputs.shape))
+    print("空间行号，每一列是一帧：\n", spatial_row_indices)
+    print("空间掩码，每一行是一帧，True 表示补齐：\n", spatial_mask)
+    assert torch.equal(spatial_row_indices, torch.tensor([[0, 2, 3], [1, -1, 4]]))
+    assert torch.equal(
+        restore_frame_relations(spatial_inputs, spatial_row_indices, 5),
+        relation_features,
+    )
 
-    时间模型 = 时间层()
-    时间输出, 时间权重 = 时间模型(时间输入, 时间掩码, 位置向量)
-    最终结果 = 还原较晚帧模式(时间输出, 时间行号, 时间帧号, 5)
-    print("时间权重形状 [T-1,2L,2L]：", tuple(时间权重.shape))
-    print("最终结果形状 [R,D]：", tuple(最终结果.shape))
-    print("最终结果：\n", 最终结果)
-    assert torch.isfinite(最终结果).all()
-    assert torch.equal(时间权重[:, :, -1], torch.zeros(2, 4))
+    spatial_model = SpatialLayer()
+    spatial_outputs, spatial_weights = spatial_model(spatial_inputs, spatial_mask)
+    frame_results = restore_frame_relations(spatial_outputs, spatial_row_indices, 5)
+    print("空间权重形状 [T,L,L]：", tuple(spatial_weights.shape))
+    print("第 1 帧空间注意力权重：\n", spatial_weights[1])
+    assert tuple(frame_results.shape) == (5, 8)
+    # 第 1 帧只有一个有效 key，第二列权重必须是 0。
+    assert torch.equal(spatial_weights[1, :, 1], torch.zeros(2))
+
+    position_embedding = nn.Embedding(2, 8)
+    nn.init.uniform_(position_embedding.weight)
+    (
+        temporal_inputs, position_vectors, temporal_mask,
+        temporal_row_indices, temporal_frame_indices,
+    ) = pack_adjacent_windows(
+        frame_results, frame_indices, position_embedding.weight,
+    )
+    print("\n时间输入形状 [2L,T-1,D]：", tuple(temporal_inputs.shape))
+    print("时间行号，每一列是一个相邻帧窗口：\n", temporal_row_indices)
+    print("时间帧号：\n", temporal_frame_indices)
+    print("时间掩码，每一行是一个窗口：\n", temporal_mask)
+    print("较早位置向量：", position_embedding.weight[0])
+    print("较晚位置向量：", position_embedding.weight[1])
+    assert torch.equal(temporal_row_indices, torch.tensor([[0, 2], [1, 3], [2, 4], [-1, -1]]))
+    assert torch.equal(temporal_frame_indices, torch.tensor([[0, 1], [0, 2], [1, 2], [-1, -1]]))
+    assert torch.equal(temporal_mask, torch.tensor([[False, False, False, True]] * 2))
+    assert torch.equal(position_vectors[2, 0], position_embedding.weight[1])  # 关系行 2 在第一个窗口较晚。
+    assert torch.equal(position_vectors[0, 1], position_embedding.weight[0])  # 同一关系行 2 在第二个窗口较早。
+    # 用时间输入本身核对打包和还原，不受模型随机参数影响。
+    assert torch.equal(
+        restore_latter_frame_relations(
+            temporal_inputs, temporal_row_indices, temporal_frame_indices, 5,
+        ),
+        frame_results,
+    )
+
+    temporal_model = TemporalLayer()
+    temporal_outputs, temporal_weights = temporal_model(
+        temporal_inputs, temporal_mask, position_vectors,
+    )
+    final_results = restore_latter_frame_relations(
+        temporal_outputs, temporal_row_indices, temporal_frame_indices, 5,
+    )
+    print("时间权重形状 [T-1,2L,2L]：", tuple(temporal_weights.shape))
+    print("最终结果形状 [R,D]：", tuple(final_results.shape))
+    print("最终结果：\n", final_results)
+    assert torch.isfinite(final_results).all()
+    assert torch.equal(temporal_weights[:, :, -1], torch.zeros(2, 4))
 
     # 只检查计算图能连回人工输入、注意力参数、可学习位置向量。
     # 平方平均是本练习的检查目标，不是真实 STTran 的关系分类损失。
-    检查目标 = 最终结果.square().mean()
-    检查目标.backward()
-    assert 特征.grad is not None and torch.isfinite(特征.grad).all()
-    assert 空间模型.注意力.in_proj_weight.grad is not None
-    assert 时间模型.注意力.in_proj_weight.grad is not None
-    assert 位置嵌入.weight.grad is not None
-    print("\n检查目标：", 检查目标.item())
-    print("输入梯度形状：", tuple(特征.grad.shape))
-    print("位置表梯度形状：", tuple(位置嵌入.weight.grad.shape))
+    check_loss = final_results.square().mean()
+    check_loss.backward()
+    assert relation_features.grad is not None and torch.isfinite(relation_features.grad).all()
+    assert spatial_model.attention.in_proj_weight.grad is not None
+    assert temporal_model.attention.in_proj_weight.grad is not None
+    assert position_embedding.weight.grad is not None
+    print("\n检查目标：", check_loss.item())
+    print("输入梯度形状：", tuple(relation_features.grad.shape))
+    print("位置表梯度形状：", tuple(position_embedding.weight.grad.shape))
     print("所有形状、有效行号、补齐掩码、还原顺序和反向传播检查通过。")
 
 

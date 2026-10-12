@@ -9,73 +9,73 @@ import math
 import torch
 
 
-def 计算注意力(查询, 键, 值):
+def compute_attention(queries, keys, values):
     """计算最基础的单头注意力，不含额外掩码和随机丢弃。"""
     # 查询形状：[查询数量, 特征维度]
     # 键形状：  [候选数量, 特征维度]
     # 值形状：  [候选数量, 值维度]
-    原始得分 = 查询 @ 键.T
-    特征维度 = 查询.shape[-1]
-    缩放得分 = 原始得分 / math.sqrt(特征维度)
-    权重 = torch.softmax(缩放得分, dim=-1)  # 每一行分别归一化。
-    输出 = 权重 @ 值
-    return 原始得分, 缩放得分, 权重, 输出
+    raw_scores = queries @ keys.T
+    feature_dim = queries.shape[-1]
+    scaled_scores = raw_scores / math.sqrt(feature_dim)
+    attention_weights = torch.softmax(scaled_scores, dim=-1)  # 每一行分别归一化。
+    output = attention_weights @ values
+    return raw_scores, scaled_scores, attention_weights, output
 
 
-def 展示计算(标题, 查询, 键, 值):
-    print("\n" + 标题)
-    print("查询：", 查询)
-    print("键：", 键)
-    print("值：", 值)
-    print("查询、键、值的形状：", list(查询.shape), list(键.shape), list(值.shape))
+def show_attention_calculation(heading, queries, keys, values):
+    print("\n" + heading)
+    print("查询：", queries)
+    print("键：", keys)
+    print("值：", values)
+    print("查询、键、值的形状：", list(queries.shape), list(keys.shape), list(values.shape))
 
-    原始得分, 缩放得分, 权重, 输出 = 计算注意力(查询, 键, 值)
-    print("第一步，查询与键做点积：", 原始得分)
-    print("第二步，除以特征维度的平方根：", 缩放得分)
-    print("第三步，转换成注意力权重：", 权重)
-    print("各行权重之和：", 权重.sum(dim=-1))
-    print("第四步，用权重融合值：", 输出)
-    print("输出形状：", list(输出.shape))
-    return 权重, 输出
+    raw_scores, scaled_scores, attention_weights, output = compute_attention(queries, keys, values)
+    print("第一步，查询与键做点积：", raw_scores)
+    print("第二步，除以特征维度的平方根：", scaled_scores)
+    print("第三步，转换成注意力权重：", attention_weights)
+    print("各行权重之和：", attention_weights.sum(dim=-1))
+    print("第四步，用权重融合值：", output)
+    print("输出形状：", list(output.shape))
+    return attention_weights, output
 
 
-def 主程序():
+def main():
     torch.set_printoptions(precision=4, sci_mode=False)
 
     # float32 是浮点类型；device="cpu" 明确在处理器上计算。
-    查询 = torch.tensor([[1., 0.]], dtype=torch.float32, device="cpu")
-    键 = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32, device="cpu")
-    值 = torch.tensor([[10., 0.], [0., 20.]], dtype=torch.float32, device="cpu")
+    queries = torch.tensor([[1., 0.]], dtype=torch.float32, device="cpu")
+    keys = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32, device="cpu")
+    values = torch.tensor([[10., 0.], [0., 20.]], dtype=torch.float32, device="cpu")
 
-    原始权重, 原始输出 = 展示计算("一、一个查询，两份信息", 查询, 键, 值)
+    initial_weights, initial_output = show_attention_calculation("一、一个查询，两份信息", queries, keys, values)
     print("手算核对：权重约 [0.6698, 0.3302]；输出约 [6.6976, 6.6048]。")
 
-    第二个查询 = torch.tensor([[0., 1.]], dtype=torch.float32)
-    展示计算("二、改变查询，匹配方向也会变化", 第二个查询, 键, 值)
+    second_query = torch.tensor([[0., 1.]], dtype=torch.float32)
+    show_attention_calculation("二、改变查询，匹配方向也会变化", second_query, keys, values)
 
-    相同匹配查询 = torch.tensor([[1., 1.]], dtype=torch.float32)
-    展示计算("三、两个匹配得分相同，权重各为一半", 相同匹配查询, 键, 值)
+    equal_score_query = torch.tensor([[1., 1.]], dtype=torch.float32)
+    show_attention_calculation("三、两个匹配得分相同，权重各为一半", equal_score_query, keys, values)
 
-    更改后的值 = torch.tensor([[10., 0.], [0., 100.]], dtype=torch.float32)
-    新权重, 新输出 = 展示计算("四、只改变值，观察权重与输出", 查询, 键, 更改后的值)
-    print("权重是否保持相同：", "是" if torch.allclose(原始权重, 新权重) else "否")
-    print("原来输出：", 原始输出)
-    print("改变值后的输出：", 新输出)
+    changed_values = torch.tensor([[10., 0.], [0., 100.]], dtype=torch.float32)
+    updated_weights, updated_output = show_attention_calculation("四、只改变值，观察权重与输出", queries, keys, changed_values)
+    print("权重是否保持相同：", "是" if torch.allclose(initial_weights, updated_weights) else "否")
+    print("原来输出：", initial_output)
+    print("改变值后的输出：", updated_output)
     print("原因：匹配使用查询和键；融合内容来自值。")
 
-    两个查询 = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
-    展示计算("五、两个查询同时计算，每行得到自己的结果", 两个查询, 键, 值)
+    query_batch = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
+    show_attention_calculation("五、两个查询同时计算，每行得到自己的结果", query_batch, keys, values)
 
     print("\n六、自注意力的输入来源相同，学习投影可以不同")
-    输入特征 = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
+    input_features = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
     # 以下投影是教学固定数字；真实模型中它们是通过训练学习的参数。
-    查询投影 = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
-    键投影 = torch.tensor([[0., 1.], [1., 0.]], dtype=torch.float32)
-    值投影 = torch.tensor([[10., 0.], [0., 20.]], dtype=torch.float32)
-    投影后查询 = 输入特征 @ 查询投影
-    投影后键 = 输入特征 @ 键投影
-    投影后值 = 输入特征 @ 值投影
-    展示计算("同一组输入经过三种投影", 投影后查询, 投影后键, 投影后值)
+    query_projection = torch.tensor([[1., 0.], [0., 1.]], dtype=torch.float32)
+    key_projection = torch.tensor([[0., 1.], [1., 0.]], dtype=torch.float32)
+    value_projection = torch.tensor([[10., 0.], [0., 20.]], dtype=torch.float32)
+    projected_queries = input_features @ query_projection
+    projected_keys = input_features @ key_projection
+    projected_values = input_features @ value_projection
+    show_attention_calculation("同一组输入经过三种投影", projected_queries, projected_keys, projected_values)
     print("来源相同，并不保证查询、键、值的数值相同。")
 
     print("\n理解检查")
@@ -87,4 +87,4 @@ def 主程序():
 
 
 if __name__ == "__main__":
-    主程序()
+    main()
