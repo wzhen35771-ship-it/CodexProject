@@ -1,35 +1,64 @@
-"""第二课：自动求导。先预测输出，再运行核对。"""
+"""手算求导、梯度累加与两次 SGD 更新。全部使用 CPU 标量。"""
+
+import math
+
 import torch
 
-# 一、一个变量的求导。
-# 使用浮点数；requires_grad=True 表示需要跟踪运算，以便计算梯度。
-x = torch.tensor(2.0, requires_grad=True)
-y = x ** 2 + 3 * x
-print("一、一个变量的求导")
-print("输入 x：", x.item())
-print("计算结果 y：", y.item())
-print("反向传播之前的梯度：", x.grad)  # 此时尚未计算，输出 None。
 
-y.backward()  # 计算 y 对 x 的导数，结果存入 x.grad。
-print("反向传播之后的梯度：", x.grad.item())
-print("求导不会改变 x 的值：", x.item())
+def main():
+    value = torch.tensor(3.0, requires_grad=True)
+    result = 2 * value**2 + 5 * value
+    print("求导前：x =", value.item(), "y =", result.item(), "grad =", value.grad)
+    result.backward()
+    print("第一次求导后：x =", value.item(), "grad =", value.grad.item())
+    assert result.item() == 33.0
+    assert value.grad.item() == 17.0
+    assert value.item() == 3.0
 
-# 二、多个元素的求导。先求和，让结果成为一个标量。
-v = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-total = (v ** 2).sum()
-total.backward()
-print("\n二、多个元素的求导（可选）")
-print("各元素平方后求和：", total.item())
-print("每个元素对应的梯度：", v.grad)
+    # 重做前向会得到新的计算图，但已有梯度仍会累加。
+    new_result = 2 * value**2 + 5 * value
+    new_result.backward()
+    print("未清零，第二次求导后的 grad =", value.grad.item())
+    assert value.grad.item() == 34.0
 
-# 三、梯度默认会累加；重新计算表达式，建立新的计算图。
-print("\n三、梯度的累加（可选）")
-new_y = x ** 2 + 3 * x
-new_y.backward()
-print("第二次求导后的累积梯度：", x.grad.item())
-x.grad.zero_()  # 将已保存的梯度清零，x 本身不变。
-print("清零之后的梯度：", x.grad.item())
+    value.grad.zero_()
+    third_result = 2 * value**2 + 5 * value
+    third_result.backward()
+    print("清零后重新求导的 grad =", value.grad.item())
+    assert value.grad.item() == 17.0
 
-print("\n练习：新建一个需要求导的张量 x，值为 3.0。")
-print("计算 y = 2 * x ** 2 + 5 * x，先预测 y 和梯度，再运行核对。")
-print("说明：本课只计算梯度，没有更新参数，也没有训练模型。")
+    # 将标量声明为可训练参数，使用最简单的 SGD。
+    weight = torch.nn.Parameter(torch.tensor(3.0))
+    optimizer = torch.optim.SGD([weight], lr=0.1)
+    expected_values = [(3.0, 4.0, 4.0, 2.6), (2.6, 2.56, 3.2, 2.28)]
+
+    for iteration, expected in enumerate(expected_values, start=1):
+        optimizer.zero_grad(set_to_none=True)
+        before = weight.item()
+        loss = (weight - 1.0) ** 2
+        loss.backward()
+        after_backward = weight.item()
+        gradient = weight.grad.item()
+        optimizer.step()
+        after_step = weight.item()
+        print(
+            f"第 {iteration} 次：更新前={before:.4f}，损失={loss.item():.4f}，"
+            f"梯度={gradient:.4f}，求导后={after_backward:.4f}，更新后={after_step:.4f}"
+        )
+        actual_values = (before, loss.item(), gradient, after_step)
+        assert after_backward == before
+        for actual, target in zip(actual_values, expected):
+            assert math.isclose(actual, target, rel_tol=1e-6, abs_tol=1e-6)
+
+    # 评估计算无需记录梯度；原参数的 requires_grad 不受影响。
+    with torch.no_grad():
+        prediction = weight * 2.0
+    print("no_grad 内输出是否需要梯度：", prediction.requires_grad)
+    print("原参数是否仍需要梯度：", weight.requires_grad)
+    assert not prediction.requires_grad
+    assert weight.requires_grad
+    print("求导、累加与更新检查通过。请独立重写两次更新过程。")
+
+
+if __name__ == "__main__":
+    main()
