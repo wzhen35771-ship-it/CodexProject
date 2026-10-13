@@ -1,5 +1,7 @@
 # 当前阶段：把张量、求导和训练连起来
 
+如果列表、字典、函数、类、路径与循环尚不熟悉，先学习 [Python 先修指南](../python_basics/00_study_guide.md)。它将常见语法连接到样本、配置、Dataset 和训练脚本。
+
 每天投入 5 小时，先完成这三课。目标是能独立说明和编写“输入 → 预测 → 损失 → 梯度 → 参数更新”，再进入静态场景图模型。是否进入下一阶段由验收结果决定。
 
 已有两份作业说明你接触过张量和求导，但仅凭这两份代码，还不能判断是否能独立解释和迁移。先做下面的检查；已能完成的内容只复习错题。
@@ -13,7 +15,21 @@ python -c "import sys; print(sys.executable)"
 python -c "import torch; print(torch.__version__); print(torch.tensor([1.0, 2.0]))"
 ```
 
-第二条成功后才运行配套示例。如果提示 `No module named torch`，先解决该解释器的 PyTorch 环境问题，再开展代码练习。不同终端、编辑器和环境可能使用不同解释器，要以第一条打印的路径为准。当前编写资料时，用于校验的 bundled Python 没有安装 PyTorch，所以本轮只能完成示例语法检查，不能把示例的预期输出当作已验证运行结果。
+第二条成功后才运行配套示例。如果提示 `No module named torch`，先解决该解释器的 PyTorch 环境问题，再开展代码练习。不同终端、编辑器和环境可能使用不同解释器，要以第一条打印的路径为准。本次已使用 VS Code 配置的 Python 解释器，在 PyTorch 2.6.0 的 CPU 环境实际运行三个示例，张量与求导检查、人工训练集拟合和保存加载检查均通过。这验证资料可运行，个人掌握程度仍由独立练习检查。
+
+本机已验证的解释器为：
+
+```text
+C:/Users/admin/Documents/Codex/2026-10-12/ban-2/outputs/programming-starter/.venv/Scripts/python.exe
+```
+
+在 PowerShell 中运行张量示例：
+
+```powershell
+& 'C:/Users/admin/Documents/Codex/2026-10-12/ban-2/outputs/programming-starter/.venv/Scripts/python.exe' -X utf8 'C:/Users/admin/Desktop/CodexProject/pytorch_learning/pytorch_basics/01_tensors_example.py'
+```
+
+运行其他课程时替换最后的脚本文件名。这个路径是本机现有环境；其他电脑需替换为其实际解释器。
 
 所有例子使用人工数据和 CPU，不需要图片、数据下载或显卡。训练示例在成功训练并通过检查后，把教学权重保存到本目录的 `outputs/`。
 
@@ -42,11 +58,11 @@ python -c "import torch; print(torch.__version__); print(torch.tensor([1.0, 2.0]
 
 三课对应文件：
 
-- [01_张量_讲义.md](01_张量_讲义.md) 与 [01_张量_示例.py](01_张量_示例.py)
-- [02_自动求导_讲义.md](02_自动求导_讲义.md) 与 [02_自动求导_示例.py](02_自动求导_示例.py)
-- [03_训练循环_讲义.md](03_训练循环_讲义.md) 与 [03_训练循环_示例.py](03_训练循环_示例.py)
+- [01_tensors_notes.md](01_tensors_notes.md) 与 [01_tensors_example.py](01_tensors_example.py)
+- [02_autograd_notes.md](02_autograd_notes.md) 与 [02_autograd_example.py](02_autograd_example.py)
+- [03_training_loop_notes.md](03_training_loop_notes.md) 与 [03_training_loop_example.py](03_training_loop_example.py)
 
-原有 [01_张量_作业.py](01_张量_作业.py) 和 [02_自动求导_作业.py](02_自动求导_作业.py) 保留。先独立重做，再核对已有答案。第三课独立练习可按命名规范自行新建 `03_训练循环_作业.py`。
+原有 [01_tensors_exercise.py](01_tensors_exercise.py) 和 [02_autograd_exercise.py](02_autograd_exercise.py) 保留。先独立重做，再核对已有答案。第三课独立练习可按命名规范自行新建 `03_training_loop_exercise.py`。
 
 ## 进入下一阶段的条件
 

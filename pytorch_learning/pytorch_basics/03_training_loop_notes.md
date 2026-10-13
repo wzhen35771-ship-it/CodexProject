@@ -2,7 +2,7 @@
 
 这课把前两课连成一个能独立运行的程序。输入是已知物体位置构成的二维特征，输出是三种互斥的人工关系类别。目标是验证训练代码能否拟合少量数据，并完成保存加载。
 
-配套程序：[03_训练循环_示例.py](03_训练循环_示例.py)。它使用 CPU 和 12 条人工数据，无需下载。运行成功后才生成 `outputs/03_训练循环_权重.pt`。
+配套程序：[03_training_loop_example.py](03_training_loop_example.py)。它使用 CPU 和 12 条人工数据，无需下载。运行成功后才生成 `outputs/03_training_loop_weights.pt`。
 
 这不是从像素生成场景图的 SGDet 模型，没有真实数据、物体检测、关系检索和标准 R/mR 评价。训练集全部分类正确只证明这个小任务和训练链路能工作，不代表真实场景图效果。
 
@@ -156,10 +156,10 @@ loaded_model.load_state_dict(state)
 运行方式：在已安装 PyTorch 的环境中切换到本课目录，运行：
 
 ```powershell
-python .\03_训练循环_示例.py
+python .\03_training_loop_example.py
 ```
 
-可用 `python .\03_训练循环_示例.py --help` 查看参数。输出目录以脚本所在目录为基准，不受终端当前目录影响。若提示不认识 `weights_only` 参数，先核对 PyTorch 版本和官方文档；本次运行环境未安装 PyTorch，尚未验证具体版本兼容性。
+可用 `python .\03_training_loop_example.py --help` 查看参数。输出目录以脚本所在目录为基准，不受终端当前目录影响。若提示不认识 `weights_only` 参数，先核对 PyTorch 版本和官方文档；本次已在 PyTorch 2.6.0 的 CPU 环境验证默认参数运行及保存加载流程。
 
 ## 9. 常见错误怎么定位
 

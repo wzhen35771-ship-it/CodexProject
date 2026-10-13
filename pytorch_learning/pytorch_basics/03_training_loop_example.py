@@ -114,7 +114,7 @@ def main():
     # 仅保存通过拟合检查的教学权重。路径以脚本目录为准。
     output_directory = Path(__file__).resolve().parent / "outputs"
     output_directory.mkdir(exist_ok=True)
-    checkpoint_path = output_directory / "03_训练循环_权重.pt"
+    checkpoint_path = output_directory / "03_training_loop_weights.pt"
     torch.save(model.state_dict(), checkpoint_path)
 
     # 只加载刚由本程序保存的权重，重新创建相同结构后核对输出。
