@@ -10,3 +10,5 @@ print('广播相加：', x + offset)
 w = torch.tensor([[1., 0.], [0., 1.], [1., 1.]])
 print('矩阵乘法：', x @ w)
 assert torch.equal(x.sum(dim=0), torch.tensor([5., 7., 9.]))
+#5,7,9
+#6,15
