@@ -9,20 +9,27 @@ import argparse
 def count_batches(sample_count, batch_size):
     """不丢弃尾批：sample_count >= 0，batch_size >= 1；不满足时抛 ValueError。"""
     # TODO: 完成参数检查和批次数计算。
-    raise NotImplementedError("请先实现 count_batches")
+    if sample_count>=0 and batch_size>=1:
+        return (sample_count + batch_size - 1) // batch_size
+    raise ValueError("cuowu")
 
 
 def make_batches(samples, batch_size):
     """按顺序把列表切成批次，保留尾批，返回列表；batch_size < 1 时抛 ValueError。"""
     # TODO: 不修改原 samples；空列表返回 []。
-    raise NotImplementedError("请先实现 make_batches")
+    sample=list(samples)
+    if batch_size < 1:
+        raise ValueError("batch_size < 1")
+    return [sample[i:i + batch_size] for i in range(0, len(sample), batch_size)]
 
 
 def compute_accuracy(predictions, labels):
     """等长且非空时返回准确率；长度不等或为空时抛 ValueError。"""
     # TODO: 准确率应是 0 到 1 的数，不是百分比字符串。
-    raise NotImplementedError("请先实现 compute_accuracy")
-
+    if len(predictions) != len(labels) or len(predictions) == 0:
+        raise ValueError("长度不等或为空")
+    correct = sum(p == l for p, l in zip(predictions, labels))
+    return correct / len(predictions)
 
 def expect_value_error(function, *arguments):
     try:

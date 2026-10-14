@@ -9,7 +9,7 @@
 | [Python 先修指南](python_basics/00_study_guide.md) | 读训练代码需要的 Python 语法，5 天安排、示例与综合练习 |
 | [PyTorch 基础指南](pytorch_basics/00_study_guide.md) | 张量、自动求导、训练循环的三课讲义与独立作业 |
 | [静态场景图学习方案](02_scene_graph_study_plan.md) | 先修检查、8 周主线、当前任务与研究实验验收 |
-| [论文阅读清单](04_paper_reading_list.md) | 与课题对应的论文顺序、作者代码及每篇验收问题 |
+| [论文阅读清单](04_paper_reading_list.md) | 综述、注意力、检测、关系预测、图传递与长尾的分阶段阅读顺序 |
 | [当前学习周报](03_weekly_report.md) | 已学习内容、待验收问题与下一周计划 |
 | [命名规范](01_naming_conventions.md) | 英文命名、文件组织与代码名称 |
 
