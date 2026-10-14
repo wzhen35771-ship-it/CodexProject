@@ -17,6 +17,10 @@ logits 是未归一化得分。`CrossEntropyLoss` 接收 [B, 3] logits 与 [B] l
 
 ## 独立练习与验收
 
+看懂前向与损失后，运行补充示例 [05_parameter_update_example.py](05_parameter_update_example.py)。它用一条人工样本完成一次“清零 → 前向 → 损失 → 求导 → 更新”，并重新前向核对损失。本机 PyTorch 2.6.0+cpu 运行时，损失由约 1.5134 降至 1.3435；这只是一次教学更新。
+
+`backward()` 计算梯度，`optimizer.step()` 修改模型的权重和偏置。原来的 logits 和 loss 不会自动变成更新后的结果，需要再次调用模型并计算损失。
+
 1. 解释 B 的含义，并手算模型总参数数。
 2. 将隐藏层改为 4，预测参数数量后验证。
 3. 创建全零 [1, 3] logits，标签为 0，计算损失并解释为何约为 1.099。
