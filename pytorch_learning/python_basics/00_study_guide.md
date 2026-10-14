@@ -14,6 +14,8 @@
 
 每天 5 小时分配：概念 1 小时、阅读并手算示例 1 小时、修改示例与独立练习 2 小时、记录验证结果和卡点 1 小时。先预测输出，再运行；对能解释的部分做小改动；最后不看答案完成验收。
 
+阅读 01～05 时，可随时查看 [常用函数与语法速查](common_functions_cheatsheet.md)：包含 `len`、`range`、`enumerate`、`zip`、列表方法，以及 `raise`、`assert` 和批次数量公式。
+
 ## 运行方式
 
 打开 VS Code 的项目根目录 `CodexProject`，在 PowerShell 运行：

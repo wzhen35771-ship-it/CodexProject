@@ -16,7 +16,7 @@
 | 讲义 | `01_tensors_notes.md` |
 | 示例 | `01_tensors_example.py` |
 | 个人练习 | `01_tensors_exercise.py` |
-| 教学权重 | `03_training_loop_weights.pt`，运行成功后存入专题的 `outputs/` |
+| 教学权重 | `08_classifier_weights.pt`，第八课运行后存入专题的 `outputs/` |
 | 周报导出 | 工作区 `output/pdf/weekly_report.pdf` |
 
 同一课的讲义、示例与练习采用相同序号和主题，末尾分别使用 `_notes`、`_example`、`_exercise`。个人练习的内容由学习者完成，重命名时保持其答案。
