@@ -2,7 +2,7 @@
 
 本课先认识训练脚本里的普通 Python 数据。学完应能独立解释赋值、索引、切片，以及为什么修改一个列表会影响另一个变量。
 
-先运行 [完整示例](01_data_structures_example.py)，再逐段修改。示例只使用 Python 标准库，不需要安装 PyTorch。建议用一天的 5 小时完成：概念 1 小时、逐行阅读 1 小时、练习 2 小时、口述与记录 1 小时。
+先运行 [完整示例](01_data_structures_example.py)，再逐段修改。示例只使用 Python 标准库，不需要安装 PyTorch。用主计划中的基础时段学习本课；已掌握部分可通过验收后跳过。
 
 ## 1. 赋值和常见类型
 
@@ -117,6 +117,6 @@ print(independent)  # [[1, 2], [88, 4]]
 
 ## 6. 接到 PyTorch 学习
 
-现在只需辨认三件事：样本字段装在哪个容器、如何取到一条记录、是否意外共享了可变对象。接着学习 [循环与函数](02_control_flow_and_functions_notes.md)。后续阅读 [PyTorch 训练示例](../pytorch_basics/03_training_loop_example.py) 时，先找到 `make_artificial_data()` 的返回值和配置变量，不急着解释张量计算。
+现在只需辨认三件事：样本字段装在哪个容器、如何取到一条记录、是否意外共享了可变对象。接着学习 [循环与函数](02_control_flow_and_functions_notes.md)。后续阅读 [PyTorch 训练示例](../pytorch_basics/07_training_example.py) 时，先沿第 7 课导入找到第 6 课 `make_data()` 的返回值，再检查训练参数，不急着解释张量计算。
 
 官方参考：[Python 入门：数字、字符串和列表](https://docs.python.org/3/tutorial/introduction.html)、[Python 数据结构](https://docs.python.org/3/tutorial/datastructures.html)。

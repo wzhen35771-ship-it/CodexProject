@@ -1,3 +1,5 @@
+> 历史归档：保留原研究假设和当时记录，不代表当前完成状态。日程请使用 [十周学习计划](../study_plan.md)，研究实验请使用 [研究准备](../research_notes.md)。其中开题/PPT 数值来自旧记录，本次未取得原材料核实。
+
 # 当前学习方案：静态场景图生成
 
 研究目标：围绕“多路径自适应融合的静态场景图生成”，逐步完成基础验收、静态模型阅读、基线运行、门控融合、图信息传递与长尾实验。
@@ -6,7 +8,7 @@
 
 ## Python 先修：适配 PyTorch 代码阅读
 
-新入口：[Python 先修指南](python_basics/00_study_guide.md)。按照每天 5 小时建议用 5 天完成：
+新入口：[Python 先修指南](../../learning/python_basics/00_study_guide.md)。按照每天 5 小时建议用 5 天完成：
 
 | 天 | Python 知识 | 与 PyTorch 的连接 |
 | --- | --- | --- |
@@ -28,7 +30,7 @@
 2. 能否解释预测、损失、梯度、参数更新，并独立写出训练循环？
 3. 能否明确一个关系分类练习给了模型哪些已知输入，以及离完整 SGDet 还差什么？
 
-三个问题都能用代码和输出说明，就缩短基础阶段；遇到困难时只补对应章节。当前学习入口：[基础训练指南](pytorch_basics/00_study_guide.md)。
+三个问题都能用代码和输出说明，就缩短基础阶段；遇到困难时只补对应章节。当前学习入口：[基础训练指南](../../learning/pytorch_basics/00_study_guide.md)。
 
 ## 每天的时间分配
 
@@ -111,15 +113,15 @@ PPT 中 Graph 的 R@100 从 33.2 到 34.0、mR@100 从 9.8 到 10.2，差值较�
 
 ## 环境与学习记录
 
-本机 VS Code 已配置的 Python 环境包含 PyTorch 2.6.0+cpu，当前三个 PyTorch 示例已实际运行通过，人工分类器的保存加载结果一致。具体解释器与命令见 [PyTorch 基础指南](pytorch_basics/00_study_guide.md)。bundled Python 可运行标准库先修示例，但未安装 PyTorch；不同解释器的依赖分别管理。运行前检查 `sys.executable`、PyTorch 版本和设备；研究仓库另设环境。
+本机 VS Code 已配置的 Python 环境包含 PyTorch 2.6.0+cpu，当前三个 PyTorch 示例已实际运行通过，人工分类器的保存加载结果一致。具体解释器与命令见 [PyTorch 基础指南](../../learning/pytorch_basics/00_study_guide.md)。bundled Python 可运行标准库先修示例，但未安装 PyTorch；不同解释器的依赖分别管理。运行前检查 `sys.executable`、PyTorch 版本和设备；研究仓库另设环境。
 
 每次学习记录：实际问题、已尝试方法、形状或输出、判断依据、尚未解决的部分。完整数据集训练所需环境、数据和算力到对应阶段再落实。
 
-周报编辑入口：[当前学习周报](03_weekly_report.md)。记录已完成学习时附证据；把尚未运行、尚未实现的内容放入待验收或下周计划。
+周报编辑入口：[当前学习周报](../reports/weekly_report_2026_10_13.md)。记录已完成学习时附证据；把尚未运行、尚未实现的内容放入待验收或下周计划。
 
 ## 官方资料
 
-逐篇阅读顺序、开读条件与完成标准见 [论文阅读清单](04_paper_reading_list.md)。顺序为综述导读、注意力基础、DETR、RelTR、EGTR，再进入 Relationformer、BGNN、Logit Adjustment、PE-Net；Hydra-SGG 最后选读。
+逐篇阅读顺序、开读条件与完成标准见 [论文阅读清单](../paper_reading_list.md)。顺序为综述导读、注意力基础、DETR、RelTR、EGTR，再进入 Relationformer、BGNN、Logit Adjustment、PE-Net；Hydra-SGG 最后选读。
 
 - [Python 官方教程](https://docs.python.org/3/tutorial/)：数据结构、控制流、函数、模块、类、文件与异常。
 - [PyTorch 基础教程](https://docs.pytorch.org/tutorials/beginner/basics/intro.html)：张量、数据、模型、自动求导、优化与保存加载。

@@ -1,4 +1,13 @@
-# 本仓库只跟踪 PyTorch 学习目录和这份忽略规则。
-/*
-!/.gitignore
-!/pytorch_learning/
+# Local environments, secrets and caches
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.maintenance/
+.vscode/
+# Reproducible intermediate outputs
+/tmp/
+/downloads/
+**/outputs/

@@ -68,19 +68,19 @@ accuracy = correct / len(labels)
 在项目根目录运行：
 
 ```powershell
-python pytorch_learning/python_basics/05_training_script_reading_example.py
-python pytorch_learning/python_basics/05_training_script_reading_example.py --epochs 3 --batch-size 5
-python pytorch_learning/python_basics/05_training_script_reading_example.py --batch-size 10
+python learning/python_basics/05_training_script_reading_example.py
+python learning/python_basics/05_training_script_reading_example.py --epochs 3 --batch-size 5
+python learning/python_basics/05_training_script_reading_example.py --batch-size 10
 ```
 
 运行前预测每轮 batch 数和每批样本数，再与输出比较。`if __name__ == "__main__":` 保证脚本直接执行时调用 `main()`；其他文件 import 它时，不会自动启动循环。
 
-接下来阅读 [PyTorch 训练循环讲义](../pytorch_basics/03_training_loop_notes.md) 与 [真实训练示例](../pytorch_basics/03_training_loop_example.py)：
+接下来阅读 [PyTorch 训练循环讲义](../pytorch_basics/07_training_notes.md) 与 [真实训练示例](../pytorch_basics/07_training_example.py)：
 
-1. 找到 `argparse`、`make_artificial_data()`、`TensorDataset` 和 `DataLoader`，逐步画出数据流。
-2. 找到 `SmallRelationClassifier(nn.Module)`，区分构造函数创建层与 `forward()` 计算输出。
+1. 在第 6 课找到 `make_data()`，在第 7 课找到 `TensorDataset` 和 `DataLoader`，逐步画出数据流；当前 PyTorch 示例没有命令行参数解析。
+2. 在第 5 课找到 `SmallClassifier(nn.Module)`，说明第 7 课如何导入它，区分创建层与前向计算。
 3. 标出 `optimizer.zero_grad()`、`loss.backward()`、`optimizer.step()` 的位置，并用 PyTorch 课程解释作用。
-4. 解释为何该真实示例提前停止时，实际更新次数不能简单用最大 epochs 计算。
+4. 当前示例固定 200 轮、每轮 3 批，共更新 600 次，没有提前停止；以后加入提前停止时应按实际 step 次数计数。
 
 本课先完成“代码在调用谁、数据是什么、循环执行几次”；反向传播的数学和 Tensor 操作在 PyTorch 课程继续验收。
 
@@ -89,10 +89,10 @@ python pytorch_learning/python_basics/05_training_script_reading_example.py --ba
 打开 [作业文件](05_training_script_reading_exercise.py)，实现 `count_batches`、`make_batches`、`compute_accuracy`。先手算 `7 条样本、batch_size=3、epochs=2` 的批次数与批次长度，再完成代码。
 
 ```powershell
-python pytorch_learning/python_basics/05_training_script_reading_exercise.py --check
+python learning/python_basics/05_training_script_reading_exercise.py --check
 ```
 
-作业初始状态含 `NotImplementedError`，`--check` 会明确提示未完成并以退出码 2 结束。完成后，自检应验证尾批、空数据、无效 batch_size、预测长度不等和准确率边界；最后用自己写的一组样本解释循环。自检通过不等于已掌握 PyTorch 训练。
+模板未实现时会通过 `NotImplementedError` 提示未完成；当前作业是否完成以自己的文件和自检结果为准。自检应验证尾批、空数据、无效 batch_size、预测长度不等和准确率边界；最后用自己写的一组样本解释循环。自检通过不等于已掌握 PyTorch 训练。
 
 验收：解释普通 Dataset 类的两种调用；画出配置到准确率的数据流；独立完成三个函数；明确本课参数更新次数为 0，并指出真实训练更新参数的位置。
 

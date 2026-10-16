@@ -4,7 +4,7 @@
 
 ## 1. 当前工作目录和脚本目录
 
-`Path.cwd()` 是启动程序时的工作目录；`Path(__file__).resolve().parent` 是脚本所在目录。两者可能不同。执行 `python pytorch_learning/python_basics/04_files_config_and_debugging_example.py` 时，如果终端位于项目根目录，工作目录就是项目根目录。
+`Path.cwd()` 是启动程序时的工作目录；`Path(__file__).resolve().parent` 是脚本所在目录。两者可能不同。执行 `python learning/python_basics/04_files_config_and_debugging_example.py` 时，如果终端位于项目根目录，工作目录就是项目根目录。
 
 ```python
 from pathlib import Path
@@ -45,10 +45,10 @@ batch_size = arguments.batch_size
 在项目根目录的 PowerShell 运行：
 
 ```powershell
-python pytorch_learning/python_basics/04_files_config_and_debugging_example.py
-python pytorch_learning/python_basics/04_files_config_and_debugging_example.py --batch-size 3
-python pytorch_learning/python_basics/04_files_config_and_debugging_example.py --show-traceback
-python pytorch_learning/python_basics/04_files_config_and_debugging_example.py --help
+python learning/python_basics/04_files_config_and_debugging_example.py
+python learning/python_basics/04_files_config_and_debugging_example.py --batch-size 3
+python learning/python_basics/04_files_config_and_debugging_example.py --show-traceback
+python learning/python_basics/04_files_config_and_debugging_example.py --help
 ```
 
 如果 `python` 不存在，使用你实际选择的 Python 可执行文件；PowerShell 调用带空格的可执行路径时，用 `& '完整路径'`。不要照抄一个并不存在的路径。

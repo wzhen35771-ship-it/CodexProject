@@ -2,7 +2,7 @@
 
 前置：[循环与函数](02_control_flow_and_functions_notes.md)。本课的任务是能说明 `self` 指谁、对象保存了什么、`dataset[index]` 和 `model(value)` 如何调用方法。
 
-运行 [完整示例](03_classes_and_modules_example.py)。它只使用 Python 标准库，没有自动求导或参数更新。按一天 5 小时安排：概念 1 小时、阅读 1 小时、实践 2 小时、口述与复盘 1 小时。
+运行 [完整示例](03_classes_and_modules_example.py)。它只使用 Python 标准库，没有自动求导或参数更新。用主计划中的基础时段学习本课，完成后独立复述。
 
 ## 1. 类、实例、属性和方法
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
 **普通 Python 类保存一个 `float` 属性不会获得梯度，也不会注册可训练参数。** 本课的 `ScalarLinear` 只算数值结果，不能直接交给 PyTorch 优化器作为可训练模型。
 
-PyTorch 初学时按标准方式继承 `nn.Module`、调用 `super().__init__()`、在 `forward` 中写计算，然后调用 `model(features)`。无需照搬本课手写的 `__call__`；框架已经提供了它。阅读 [现有训练示例](../pytorch_basics/03_training_loop_example.py)，找出 `SmallRelationClassifier` 的父类、初始化、两个层和 `forward`，然后进入正式 PyTorch 课程。
+PyTorch 初学时按标准方式继承 `nn.Module`、调用 `super().__init__()`、在 `forward` 中写计算，然后调用 `model(features)`。无需照搬本课手写的 `__call__`；框架已经提供了它。阅读 [现有模型示例](../pytorch_basics/05_models_example.py)，找出 `SmallClassifier` 的父类、初始化、两个层和 `forward`，然后进入正式 PyTorch 课程。
 
 ## 6. 练习
 
